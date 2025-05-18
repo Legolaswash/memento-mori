@@ -9,10 +9,51 @@
   --week-gap: 2px;
   --week-size: 4px;
   --month-gap: 10px;
+  
+  /* New color variables for events */
+  --color-academic: #4285f4;
+  --color-parents: #ea4335;
+  --color-siblings: #fbbc05;
+  --color-grandparents: #34a853;
+  --color-work: #673ab7;
+  --color-special-event: #ff5722;
+  --color-birthday: #e91e63;
 
   /* Do not change these */
   --month-cell-width: calc(calc(calc(var(--week-size) * 4) + calc(var(--week-gap) * 4) * 4));
   --calendar-width: calc(calc(var(--month-cell-width) * var(--columns-per-row)) - calc(var(--month-cell-width) * 3));
+}
+
+/* Light mode (default) variables */
+:root {
+  --color-background: #fff;
+  --color-dark-gray: #333;
+  --color-dark-gray-filled: #888;
+  --color-black: #000;
+  --color-white: #fff;
+  --color-text: #333;
+  --color-option-bg: #f5f5f5;
+  --color-input-bg: #fff;
+  --color-input-border: #ddd;
+  --color-container-bg: #fff;
+  --color-button-bg: #333;
+  --color-button-text: #fff;
+}
+
+/* Dark mode variables */
+[data-theme="dark"] {
+  --color-background: #0d1117;
+  --color-dark-gray: #c9d1d9;
+  --color-dark-gray-filled: #c9d1d9;
+  --color-black: #fff;
+  --color-white: #0d1117;
+  --color-text: #c9d1d9;
+  --color-option-bg: #2a2a2a;
+  --color-input-bg: #333;
+  --color-input-border: #444;
+  --color-container-bg: #1a1a1a;
+  --color-button-bg: #555;
+  --color-button-text: #fff;
 }
 
 .calendar {
@@ -28,6 +69,7 @@ body {
   font-family: Inter, sans-serif;
   margin: 0;
   padding: 0;
+  color: var(--color-text);
 }
 
 @page  {
@@ -289,4 +331,243 @@ body {
   font-size: 12px;
   gap: .6rem;
   text-decoration: none;
+}
+
+/* Updated Options Panel Styles */
+.options-panel {
+  margin-bottom: 20px;
+}
+
+.options-container {
+  background-color: var(--color-container-bg);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+  padding: 20px;
+  transition: all 0.3s ease;
+}
+
+.hidden {
+  display: none;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.form-group input {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 8px;
+  width: 100%;
+}
+
+.toggle-btn, .primary-btn {
+  background-color: var(--color-button-bg);
+  border: none;
+  border-radius: 4px;
+  color: var(--color-button-text);
+  cursor: pointer;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 16px;
+  transition: background-color 0.2s;
+}
+
+.toggle-btn:hover, .primary-btn:hover {
+  background-color: #555;
+}
+
+.life-expectancy-modifiers {
+  border-top: 1px solid #eee;
+  margin-top: 20px;
+  padding-top: 15px;
+}
+
+.modifier-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-top: 10px;
+}
+
+.modifier-item label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.modifier-item input {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 8px;
+  width: 100%;
+}
+
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.modifier-item, .period-item {
+  background-color: var(--color-option-bg);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.modifier-value, .period-value {
+  margin-top: 8px;
+  padding-left: 24px;
+}
+
+.period-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.period-range input[type="number"] {
+  width: 60px;
+}
+
+.radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 15px;
+}
+
+.radio-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.birthday-highlight {
+  margin: 15px 0;
+  padding: 12px;
+  background-color: var(--color-option-bg);
+  border-radius: 8px;
+}
+
+.form-group input, #add-event-form input, #event-frequency {
+  background-color: var(--color-input-bg);
+  border: 1px solid var(--color-input-border);
+  color: var(--color-text);
+  border-radius: 4px;
+  padding: 8px;
+}
+
+#add-event-btn {
+  grid-column: 2;
+  background-color: var(--color-special-event);
+  border: none;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  padding: 8px 12px;
+}
+
+.event-item {
+  background-color: var(--color-option-bg);
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-bottom: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Theme toggle button styles */
+#toggle-theme {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  padding: 8px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--color-input-border);
+  background-color: var(--color-container-bg);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+#toggle-theme:hover {
+  background-color: var(--color-option-bg);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.15);
+}
+
+#toggle-theme:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Smooth transition for theme changes */
+body, .calendar, .options-container, input, select, button, .event-item {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.week-cell.academic {
+  background-color: var(--color-academic) !important;
+  border-color: var(--color-academic) !important;
+}
+
+.week-cell.parents {
+  background-color: var(--color-parents) !important;
+  border-color: var(--color-parents) !important;
+}
+
+.week-cell.siblings {
+  background-color: var(--color-siblings) !important;
+  border-color: var(--color-siblings) !important;
+}
+
+.week-cell.grandparents {
+  background-color: var(--color-grandparents) !important;
+  border-color: var(--color-grandparents) !important;
+}
+
+.week-cell.work {
+  background-color: var(--color-work) !important;
+  border-color: var(--color-work) !important;
+}
+
+.week-cell.event {
+  background-color: var(--color-special-event) !important;
+  border-color: var(--color-special-event) !important;
+}
+
+.week-cell.birthday {
+  background-color: var(--color-birthday) !important;
+  border-color: var(--color-birthday) !important;
+}
+
+.week-cell.outline {
+  background-color: transparent !important;
+  border-width: 2px !important;
+}
+
+/* Fix for modifier input UI */
+.input-with-unit {
+  position: relative;
+  display: flex;
+  align-items: center;
 }
