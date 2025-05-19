@@ -1,10 +1,10 @@
 :root {
   --columns-per-row: 16;
-  --color-background: #fff;
-  --color-dark-gray: #333;
-  --color-dark-gray-filled: #888;
-  --color-black: #000;
-  --color-white: #fff;
+  --color-background: #0d1117;
+  --color-dark-gray: #c9d1d9;
+  --color-dark-gray-filled: #c9d1d9;
+  --color-black: #fff;
+  --color-white: #0d1117;
   --rect-gap: 6px;
   --week-gap: 2px;
   --week-size: 4px;
@@ -22,31 +22,8 @@
   /* Do not change these */
   --month-cell-width: calc(calc(calc(var(--week-size) * 4) + calc(var(--week-gap) * 4) * 4));
   --calendar-width: calc(calc(var(--month-cell-width) * var(--columns-per-row)) - calc(var(--month-cell-width) * 3));
-}
-
-/* Light mode (default) variables */
-:root {
-  --color-background: #fff;
-  --color-dark-gray: #333;
-  --color-dark-gray-filled: #888;
-  --color-black: #000;
-  --color-white: #fff;
-  --color-text: #333;
-  --color-option-bg: #f5f5f5;
-  --color-input-bg: #fff;
-  --color-input-border: #ddd;
-  --color-container-bg: #fff;
-  --color-button-bg: #333;
-  --color-button-text: #fff;
-}
-
-/* Dark mode variables */
-[data-theme="dark"] {
-  --color-background: #0d1117;
-  --color-dark-gray: #c9d1d9;
-  --color-dark-gray-filled: #c9d1d9;
-  --color-black: #fff;
-  --color-white: #0d1117;
+  
+  /* Dark mode variables - directly applied to root */
   --color-text: #c9d1d9;
   --color-option-bg: #2a2a2a;
   --color-input-bg: #333;
@@ -54,6 +31,10 @@
   --color-container-bg: #1a1a1a;
   --color-button-bg: #555;
   --color-button-text: #fff;
+  --color-accent: #58a6ff;
+  --color-card-shadow: rgba(0, 0, 0, 0.4);
+  --color-hover-bg: #2a2a2a;
+  --color-border-light: #30363d;
 }
 
 .calendar {
@@ -290,19 +271,6 @@ body {
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-dark-gray: #c9d1d9;
-    --color-dark-gray-filled: #c9d1d9;
-    --color-background: #0d1117;
-  }
-
-  body {
-    background-color: var(--color-background);
-    color: #c9d1d9;
-  }
-}
-
 .screen-reader-text {
   border: 0;
   clip: rect(1px, 1px, 1px, 1px);
@@ -336,6 +304,7 @@ body {
 /* Updated Options Panel Styles */
 .options-panel {
   margin-bottom: 20px;
+  padding-top: 60px;
 }
 
 .options-container {
@@ -349,6 +318,18 @@ body {
 
 .hidden {
   display: none;
+}
+
+.form-row {
+  display: flex;
+  gap: 20px; /* Adjust gap as needed */
+  align-items: flex-end; /* Aligns items to the bottom if labels have different heights */
+  margin-bottom: 15px;
+}
+
+.form-row .form-group {
+  flex: 1; /* Allows form groups to share space */
+  margin-bottom: 0; /* Remove bottom margin as it's handled by form-row */
 }
 
 .form-group {
@@ -365,7 +346,7 @@ body {
   border: 1px solid #ddd;
   border-radius: 4px;
   padding: 8px;
-  width: 100%;
+  /* width: 100%; */
 }
 
 .toggle-btn, .primary-btn {
@@ -378,11 +359,13 @@ body {
   font-size: 14px;
   font-weight: 500;
   padding: 8px 16px;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
 }
 
 .toggle-btn:hover, .primary-btn:hover {
-  background-color: #555;
+  background-color: var(--color-accent);
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 .life-expectancy-modifiers {
@@ -392,8 +375,8 @@ body {
 }
 
 .modifier-group {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid; /* Changed from flex */
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Responsive grid, aims for 3 columns if space */
   gap: 20px;
   margin-top: 10px;
 }
@@ -411,6 +394,13 @@ body {
   width: 100%;
 }
 
+.period-group {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* Create 2 equal columns */
+  gap: 20px; /* Adjust gap as needed */
+  margin-top: 10px;
+}
+
 .checkbox-wrapper {
   display: flex;
   align-items: center;
@@ -418,11 +408,16 @@ body {
   margin-bottom: 8px;
 }
 
-.modifier-item, .period-item {
+.modifier-item, .period-item, .event-item, .birthday-highlight {
   background-color: var(--color-option-bg);
   border-radius: 8px;
-  padding: 12px;
+  padding: 16px;
   margin-bottom: 12px;
+  transition: transform 0.2s ease;
+}
+
+.modifier-item:hover, .period-item:hover, .birthday-highlight:hover {
+  transform: translateY(-2px);
 }
 
 .modifier-value, .period-value {
@@ -454,11 +449,8 @@ body {
   gap: 8px;
 }
 
-.birthday-highlight {
-  margin: 15px 0;
-  padding: 12px;
-  background-color: var(--color-option-bg);
-  border-radius: 8px;
+#add-event-form {
+  margin-bottom: 5px;
 }
 
 .form-group input, #add-event-form input, #event-frequency {
@@ -467,12 +459,13 @@ body {
   color: var(--color-text);
   border-radius: 4px;
   padding: 8px;
+  margin-right: 5px;
 }
 
 #add-event-btn {
   grid-column: 2;
   background-color: var(--color-special-event);
-  border: none;
+  border: 1px solid #ff1400;
   border-radius: 4px;
   color: white;
   cursor: pointer;
@@ -487,37 +480,6 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-/* Theme toggle button styles */
-#toggle-theme {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 1000;
-  padding: 8px 12px;
-  border-radius: 20px;
-  border: 1px solid var(--color-input-border);
-  background-color: var(--color-container-bg);
-  color: var(--color-text);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-#toggle-theme:hover {
-  background-color: var(--color-option-bg);
-  transform: translateY(-1px);
-  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.15);
-}
-
-#toggle-theme:active {
-  transform: translateY(0);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 /* Smooth transition for theme changes */
@@ -570,4 +532,48 @@ body, .calendar, .options-container, input, select, button, .event-item {
   position: relative;
   display: flex;
   align-items: center;
+}
+
+/* Styles pour la légende */
+.legend-container {
+  background-color: var(--color-container-bg);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px var(--color-card-shadow);
+  padding: 20px;
+  margin-top: 40px;
+  margin-bottom: 40px;
+}
+
+.legend-container h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 18px;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  transition: transform 0.2s ease;
+}
+
+.legend-item:hover {
+  transform: translateY(-2px);
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 1px solid var(--color-border-light);
 }

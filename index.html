@@ -13,20 +13,24 @@
   </head>
 
   <body>
-    <button id="toggle-theme" class="toggle-btn">🌙 Mode sombre</button>
     <h1 class="title">Memento mori</h1>
+
+    <div class="calendar" id="calendar"></div>
+    <div id="stats" class="stats wrapper"></div>
 
     <div class="options-panel wrapper">
       <button id="toggle-options" class="toggle-btn">Afficher les options</button>
       <div class="options-container hidden">
-        <div class="form-group">
-          <label for="custom-birthdate">Date de naissance:</label>
-          <input type="date" id="custom-birthdate" name="custom-birthdate">
-        </div>
-        
-        <div class="form-group">
-          <label for="life-expectancy">Espérance de vie (années):</label>
-          <input type="number" id="life-expectancy" name="life-expectancy" min="1" max="120" value="80">
+        <div class="form-row"> <!-- New div to group birthdate and life expectancy -->
+          <div class="form-group">
+            <label for="custom-birthdate">Date de naissance:</label>
+            <input type="date" id="custom-birthdate" name="custom-birthdate">
+          </div>
+          
+          <div class="form-group">
+            <label for="life-expectancy">Espérance de vie (années):</label>
+            <input type="number" id="life-expectancy" name="life-expectancy" min="1" max="120" value="80">
+          </div>
         </div>
 
         <div class="life-expectancy-modifiers">
@@ -160,42 +164,19 @@
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-        
-        <div class="birthday-highlight">
-          <div class="checkbox-wrapper">
-            <input type="checkbox" id="highlight-birthdays" checked>
-            <label for="highlight-birthdays">Mettre en évidence les semaines d'anniversaire</label>
-          </div>
-        </div>
-        
-        <div class="display-mode">
-          <h3>Mode d'affichage</h3>
-          <div class="radio-group">
-            <div class="radio-item">
-              <input type="radio" id="show-all" name="display-mode" value="all" checked>
-              <label for="show-all">Tout afficher</label>
+            
+            <div class="period-item"> 
+              <div class="checkbox-wrapper">
+                <input type="checkbox" id="show-predefined-events" checked>
+                <label for="show-predefined-events">Afficher les événements prédéfinis</label>
+              </div>
             </div>
-            <div class="radio-item">
-              <input type="radio" id="show-academic" name="display-mode" value="academic">
-              <label for="show-academic">Seulement période académique</label>
-            </div>
-            <div class="radio-item">
-              <input type="radio" id="show-parents" name="display-mode" value="parents">
-              <label for="show-parents">Seulement temps avec parents</label>
-            </div>
-            <div class="radio-item">
-              <input type="radio" id="show-siblings" name="display-mode" value="siblings">
-              <label for="show-siblings">Seulement temps avec fratrie</label>
-            </div>
-            <div class="radio-item">
-              <input type="radio" id="show-grandparents" name="display-mode" value="grandparents">
-              <label for="show-grandparents">Seulement temps avec grands-parents</label>
-            </div>
-            <div class="radio-item">
-              <input type="radio" id="show-work" name="display-mode" value="work">
-              <label for="show-work">Seulement période de travail</label>
+            
+            <div class="period-item birthday-highlight"> <!-- Added period-item class -->
+              <div class="checkbox-wrapper">
+                <input type="checkbox" id="birthdays-toggle" class="period-toggle"> <!-- Changed ID and added class -->
+                <label for="birthdays-toggle">Mettre en évidence les semaines d'anniversaire</label> <!-- Updated label 'for' attribute -->
+              </div>
             </div>
           </div>
         </div>
@@ -222,9 +203,13 @@
         <button id="apply-settings" class="primary-btn">Appliquer</button>
       </div>
     </div>
-
-    <div class="calendar" id="calendar"></div>
-    <div id="stats" class="stats wrapper"></div>
+    
+    <div class="legend-container wrapper" id="legend-container">
+      <h3>Légende</h3>
+      <div class="legend-items">
+        <!-- Les éléments de légende seront ajoutés dynamiquement via JS -->
+      </div>
+    </div>
 
     <div class="quote wrapper">
       <cite>

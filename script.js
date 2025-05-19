@@ -6,53 +6,53 @@ let totalWeeksInLife = myLifeExpectancy * 52.1429; // As per the modern Gregoria
 // Life modifiers settings
 let lifeModifiers = {
   exercise: {
-    enabled: true,
+    enabled: false, // Changed to false
     value: 2
   },
   smoking: {
-    enabled: true,
+    enabled: false, // Changed to false
     value: -5
   },
   diet: {
-    enabled: true,
+    enabled: false, // Changed to false
     value: 3
   }
 };
 
-// Custom life period settings
+// Custom life period settings - Tous les enabled à false par défaut
 let customSettings = {
   academic: {
     start: 6, // age in years
     end: 23,  // age in years
-    enabled: true
+    enabled: false
   },
   work: {
     start: 23, // age in years
     end: 65,   // age in years
-    enabled: true
+    enabled: false
   },
   parents: {
     currentAge: 60,
     expectancy: 85,
-    enabled: true
+    enabled: false
   },
   siblings: {
     currentAge: 30,
     expectancy: 82,
-    enabled: true
+    enabled: false
   },
   grandparents: {
     currentAge: 80,
     expectancy: 90,
-    enabled: true
+    enabled: false
+  },
+  birthdays: { // Added birthdays to customSettings
+    enabled: false
   }
 };
 
-// Display mode settings
-let displayMode = 'all';
-
-// Birthday highlight setting
-let highlightBirthdays = true;
+// Show predefined events setting
+let showPredefinedEvents = true;
 
 // User's special events
 let specialEvents = [];
@@ -158,20 +158,29 @@ function days_in_month (month, year) {
   return new Date(year, month, 0).getDate();
 }
 
-// Completely rework the get_week_id_from_date function to be more reliable
+// Completely rewrite the get_week_id_from_date function to fix recurring event placement
 function get_week_id_from_date(date) {
   // Format a consistent date string to ensure we get a stable ID
   const year = date.getFullYear();
-  const month = date.getMonth() + 1;
+  const month = date.getMonth() + 1; // JavaScript months are 0-indexed
   
-  // Calculate which week in the month (1-4) this date falls into
+  // Get the day of month (1-31)
   const dayOfMonth = date.getDate();
+  
+  // Get total days in the month
   const totalDaysInMonth = days_in_month(month, year);
   
-  // Split the month into 4 equal parts and determine which part the date falls into
-  const weekInMonth = Math.min(Math.ceil((dayOfMonth / totalDaysInMonth) * 4), 4);
+  // We divide the month into 4 equal parts
+  const daysPerSegment = totalDaysInMonth / 4;
   
-  // Return a consistent ID format that matches our grid cell IDs
+  // Calculate which segment (1-4) this day falls into
+  // We use Math.ceil to ensure days at segment boundaries are handled correctly
+  let weekInMonth = Math.ceil(dayOfMonth / daysPerSegment);
+  
+  // Safety check - ensure we don't exceed 4
+  weekInMonth = Math.min(weekInMonth, 4);
+  
+  // Return the consistent ID format that matches our grid
   return `${year}-${month}-${weekInMonth}`;
 }
 
@@ -188,7 +197,7 @@ function write_life_event(life_event) {
     return;
   }
   
-  // Create a unique identifier for this event
+  // Create a unique identifier for this event that includes date information
   const eventId = `${life_event['description']}_${life_event['date'].getTime()}`;
   
   // Check if this cell already has an events tracking data attribute
@@ -217,7 +226,7 @@ function write_life_event(life_event) {
       'monthly': 'Mensuel',
       'yearly': 'Annuel'
     };
-    tooltipText += ` (${frequencyMap[life_event['frequency']]})`;
+    tooltipText += ` (${frequencyMap[life_event['frequency']] || 'Une seule fois'})`;
   }
   
   // Apply visual styles
@@ -237,196 +246,237 @@ function write_life_event(life_event) {
   }
 }
 
-// Updated function to generate and apply recurring events based on frequency
+// Updated function to generate recurring events based on frequency with improved accuracy
 function generateRecurringEvents(baseEvent) {
   const birthDate = new Date(myBirthDay);
   const lifeEndDate = new Date(birthDate);
   lifeEndDate.setFullYear(birthDate.getFullYear() + myLifeExpectancy);
   
   const eventDate = new Date(baseEvent.date);
-  const events = [];
+  const eventsToRender = []; // Renamed to avoid conflict with global 'events'
   
-  // Add the base event only once
-  events.push({
+  // Add the base event first
+  eventsToRender.push({
     date: new Date(eventDate),
     name: baseEvent.name,
-    description: baseEvent.name,
-    color: 'var(--color-special-event)',
+    description: baseEvent.name, // Or baseEvent.description if available
+    color: 'var(--color-special-event)', // Default color for user events
     frequency: baseEvent.frequency
   });
   
   // Only add recurring instances if frequency is not 'once'
   if (baseEvent.frequency !== 'once') {
+    // Keep track of weeks we've already added to avoid duplicates
+    const addedWeekIds = new Set();
+    
+    // Add the ID of the first event
+    addedWeekIds.add(get_week_id_from_date(eventDate));
+    
+    // Create a new date object for recurring calculations
     let nextDate = new Date(eventDate);
     
+    // For each frequency type, generate proper recurring dates
     if (baseEvent.frequency === 'weekly') {
-      nextDate.setDate(nextDate.getDate() + 7);
+      // Start with +7 days from the original date
+      nextDate = new Date(nextDate.getTime() + (7 * 24 * 60 * 60 * 1000)); 
       
       while (nextDate <= lifeEndDate) {
-        events.push({
-          date: new Date(nextDate),
-          name: baseEvent.name,
-          description: baseEvent.name,
-          color: 'var(--color-special-event)',
-          frequency: baseEvent.frequency
-        });
-        nextDate.setDate(nextDate.getDate() + 7);
+        // Check if we already have an event in this week
+        const weekId = get_week_id_from_date(nextDate);
+        
+        if (!addedWeekIds.has(weekId)) {
+          eventsToRender.push({
+            date: new Date(nextDate.getTime()),
+            name: baseEvent.name,
+            description: baseEvent.name,
+            color: 'var(--color-special-event)',
+            frequency: baseEvent.frequency
+          });
+          
+          // Mark this week as having an event
+          addedWeekIds.add(weekId);
+        }
+        
+        // Move to next week
+        nextDate = new Date(nextDate.getTime() + (7 * 24 * 60 * 60 * 1000));
       }
     } 
     else if (baseEvent.frequency === 'monthly') {
+      // Get the day of month to maintain
+      const dayOfMonth = eventDate.getDate();
+      
+      // Move to next month
+      nextDate = new Date(eventDate);
       nextDate.setMonth(nextDate.getMonth() + 1);
       
       while (nextDate <= lifeEndDate) {
-        events.push({
-          date: new Date(nextDate),
-          name: baseEvent.name,
-          description: baseEvent.name,
-          color: 'var(--color-special-event)',
-          frequency: baseEvent.frequency
-        });
+        // Check if we already have an event in this week
+        const weekId = get_week_id_from_date(nextDate);
+        
+        if (!addedWeekIds.has(weekId)) {
+          eventsToRender.push({
+            date: new Date(nextDate.getTime()),
+            name: baseEvent.name,
+            description: baseEvent.name,
+            color: 'var(--color-special-event)',
+            frequency: baseEvent.frequency
+          });
+          
+          // Mark this week as having an event
+          addedWeekIds.add(weekId);
+        }
+        
+        // Move to next month
         nextDate.setMonth(nextDate.getMonth() + 1);
+        
+        // Handle month length differences
+        const lastDayOfMonth = new Date(nextDate.getFullYear(), nextDate.getMonth() + 1, 0).getDate();
+        nextDate.setDate(Math.min(dayOfMonth, lastDayOfMonth));
       }
     } 
     else if (baseEvent.frequency === 'yearly') {
+      // Keep the same month and day, increment the year
+      nextDate = new Date(eventDate);
       nextDate.setFullYear(nextDate.getFullYear() + 1);
       
       while (nextDate <= lifeEndDate) {
-        events.push({
-          date: new Date(nextDate),
-          name: baseEvent.name,
-          description: baseEvent.name,
-          color: 'var(--color-special-event)',
-          frequency: baseEvent.frequency
-        });
+        // Check if we already have an event in this week
+        const weekId = get_week_id_from_date(nextDate);
+        
+        if (!addedWeekIds.has(weekId)) {
+          eventsToRender.push({
+            date: new Date(nextDate.getTime()),
+            name: baseEvent.name,
+            description: baseEvent.name,
+            color: 'var(--color-special-event)',
+            frequency: baseEvent.frequency
+          });
+          
+          // Mark this week as having an event
+          addedWeekIds.add(weekId);
+        }
+        
+        // Move to next year
         nextDate.setFullYear(nextDate.getFullYear() + 1);
       }
     }
   }
   
-  return events;
+  return eventsToRender;
 }
 
-// Function to apply custom period to a week
-function applyLifePeriods(weekElement, birthDate, weekIndex) {
-  // Calculate current age in weeks
-  const today = new Date();
-  const birth = new Date(birthDate);
-  const ageInWeeks = Math.floor((today - birth) / (1000 * 60 * 60 * 24 * 7));
+// Function to apply custom period to a week - Refactored
+function applyLifePeriods(weekElement, birthDateObj) {
+  const parts = weekElement.id.split('-'); // ID is like "YYYY-M-S"
+  const cellYear = parseInt(parts[0]);
+  const cellMonth_1_indexed = parseInt(parts[1]);
   
-  // Based on display mode, show only specific period or all
-  let classList = [];
-  
+  // Approximate date for the start of this cell's month
+  const cellMonthStartDate = new Date(cellYear, cellMonth_1_indexed - 1, 1);
+
+  // Calculate age in years at the start of the cell's month for period checks
+  let ageAtCellMonthStart = cellYear - birthDateObj.getFullYear();
+  if ( (cellMonth_1_indexed - 1) < birthDateObj.getMonth() ||
+       ((cellMonth_1_indexed - 1) === birthDateObj.getMonth() && 1 < birthDateObj.getDate()) ) {
+    ageAtCellMonthStart--; // Birthday for this year hasn't occurred yet by the start of this cell's month
+  }
+
   // Academic period
-  if (customSettings.academic.enabled && 
-      (displayMode === 'all' || displayMode === 'academic')) {
-    const academicStartWeek = customSettings.academic.start * 52;
-    const academicEndWeek = customSettings.academic.end * 52;
-    if (weekIndex >= academicStartWeek && weekIndex <= academicEndWeek) {
-      classList.push('academic');
+  if (customSettings.academic.enabled) {
+    if (ageAtCellMonthStart >= customSettings.academic.start && ageAtCellMonthStart < customSettings.academic.end) {
+      weekElement.classList.add('academic');
     }
   }
   
   // Work period
-  if (customSettings.work.enabled && 
-      (displayMode === 'all' || displayMode === 'work')) {
-    const workStartWeek = customSettings.work.start * 52;
-    const workEndWeek = customSettings.work.end * 52;
-    if (weekIndex >= workStartWeek && weekIndex <= workEndWeek) {
-      classList.push('work');
+  if (customSettings.work.enabled) {
+    if (ageAtCellMonthStart >= customSettings.work.start && ageAtCellMonthStart < customSettings.work.end) {
+      weekElement.classList.add('work');
     }
   }
   
+  const today = new Date();
   // Parents period
-  if (customSettings.parents.enabled && 
-      (displayMode === 'all' || displayMode === 'parents')) {
-    const parentsRemainingYears = customSettings.parents.expectancy - customSettings.parents.currentAge;
-    const parentsEndWeek = ageInWeeks + (parentsRemainingYears * 52);
-    if (weekIndex <= parentsEndWeek) {
-      classList.push('parents');
+  if (customSettings.parents.enabled) {
+    const parentsDeathDate = new Date(today);
+    // Ensure currentAge is not greater than expectancy to avoid negative years
+    const remainingYears = Math.max(0, customSettings.parents.expectancy - customSettings.parents.currentAge);
+    parentsDeathDate.setFullYear(today.getFullYear() + remainingYears);
+    // Color cells from today up to parentsDeathDate (approximately, by month)
+    if (cellMonthStartDate >= today && cellMonthStartDate < parentsDeathDate) {
+      weekElement.classList.add('parents');
     }
   }
   
   // Siblings period
-  if (customSettings.siblings.enabled && 
-      (displayMode === 'all' || displayMode === 'siblings')) {
-    const siblingsRemainingYears = customSettings.siblings.expectancy - customSettings.siblings.currentAge;
-    const siblingsEndWeek = ageInWeeks + (siblingsRemainingYears * 52);
-    if (weekIndex <= siblingsEndWeek) {
-      classList.push('siblings');
+  if (customSettings.siblings.enabled) {
+    const siblingsDeathDate = new Date(today);
+    const remainingYears = Math.max(0, customSettings.siblings.expectancy - customSettings.siblings.currentAge);
+    siblingsDeathDate.setFullYear(today.getFullYear() + remainingYears);
+    if (cellMonthStartDate >= today && cellMonthStartDate < siblingsDeathDate) {
+      weekElement.classList.add('siblings');
     }
   }
   
   // Grandparents period
-  if (customSettings.grandparents.enabled && 
-      (displayMode === 'all' || displayMode === 'grandparents')) {
-    const grandparentsRemainingYears = customSettings.grandparents.expectancy - customSettings.grandparents.currentAge;
-    const grandparentsEndWeek = ageInWeeks + (grandparentsRemainingYears * 52);
-    if (weekIndex <= grandparentsEndWeek) {
-      classList.push('grandparents');
+  if (customSettings.grandparents.enabled) {
+    const grandparentsDeathDate = new Date(today);
+    const remainingYears = Math.max(0, customSettings.grandparents.expectancy - customSettings.grandparents.currentAge);
+    grandparentsDeathDate.setFullYear(today.getFullYear() + remainingYears);
+    if (cellMonthStartDate >= today && cellMonthStartDate < grandparentsDeathDate) {
+      weekElement.classList.add('grandparents');
     }
   }
 
-  // Check if it's a birthday week
-  if (highlightBirthdays) {
-    // Calculate birth week in the year (0-51)
-    const birthWeekOfYear = Math.floor((birth.getDay() + birth.getDate() - 1) / 7);
+  // Check if it's a birthday week - Corrected logic
+  if (customSettings.birthdays.enabled) { // Changed from highlightBirthdays
+    const birthMonth_0_indexed = birthDateObj.getMonth(); 
+    const birthDayOfMonth = birthDateObj.getDate();
     
-    // Calculate current week in the year
-    const weekDate = new Date(birth.getTime() + (weekIndex * 7 * 24 * 60 * 60 * 1000));
-    const startOfYear = new Date(weekDate.getFullYear(), 0, 1);
-    const weekOfYear = Math.floor((weekDate - startOfYear) / (7 * 24 * 60 * 60 * 1000));
-    
-    // Check if current week matches birth week of the year
-    if (weekOfYear === birthWeekOfYear) {
-      classList.push('birthday');
+    // Construct the date of the birthday for the cell's year
+    const birthdayInCellYear = new Date(cellYear, birthMonth_0_indexed, birthDayOfMonth);
+
+    // Check if this date is valid (e.g. Feb 29 on a non-leap year would become Mar 1)
+    // and actually falls in the month we expect.
+    if (birthdayInCellYear.getFullYear() === cellYear && 
+        birthdayInCellYear.getMonth() === birthMonth_0_indexed && 
+        birthdayInCellYear.getDate() === birthDayOfMonth) {
+        
+        const birthdayWeekIdForCellYear = get_week_id_from_date(birthdayInCellYear); // Format "YYYY-M-S"
+        
+        if (weekElement.id === birthdayWeekIdForCellYear) {
+            weekElement.classList.add('birthday');
+            weekElement.classList.add('has-tooltip'); // Add tooltip class
+            weekElement.dataset.tooltip = 'Birthday'; // Set tooltip text
+        }
     }
   }
   
-  // Apply classes based on display mode
-  if (displayMode === 'all') {
-    // Apply all classes
-    classList.forEach(cls => weekElement.classList.add(cls));
-  } else {
-    // Apply only the selected class with outline style
-    const selectedClass = classList.find(cls => cls === displayMode);
-    if (selectedClass) {
-      weekElement.classList.add(selectedClass, 'outline');
-    }
-  }
-  
-  // Special events
-  specialEvents.forEach(event => {
-    const eventDate = new Date(event.date);
-    const eventWeeks = Math.floor((eventDate - birth) / (1000 * 60 * 60 * 24 * 7));
-    
-    if (weekIndex === eventWeeks) {
-      weekElement.classList.add('event');
-      weekElement.dataset.tooltip = event.name;
-    }
-  });
+  // Special events are now handled by renderAllCalendarEvents and write_life_event,
+  // so the loop for specialEvents is removed from here.
 }
 
 events = [
-  {
-    'date': new Date('1995-08-14'),
-    'description': 'Tammirinteen ala-aste 1. luokka',
-    'color': '#18aedb',
-  },
-  {
-    'date': new Date('1997-08-11'),
-    'description': 'Koulun vaihto kristilliseen kouluun',
-    'color': '#18aedb',
-  },
-  {
-    'date': new Date('1999-05-07'),
-    'description': 'Ensimmäiset kotisivut nettiin',
-    'color': '#e806f8',
-  },
-  {
-    'date': new Date('2004-07-30'),
-    'description': '1. ulkomaanmatka',
-    'color': '#e806f8',
-  },
+  // // {
+  // //   'date': new Date('1995-08-14'),
+  // //   'description': 'Tammirinteen ala-aste 1. luokka',
+  // //   'color': '#18aedb',
+  // // },
+  // // {
+  // //   'date': new Date('1997-08-11'),
+  // //   'description': 'Koulun vaihto kristilliseen kouluun',
+  // //   'color': '#18aedb',
+  // // },
+  // // {
+  // //   'date': new Date('1999-05-07'),
+  // //   'description': 'Ensimmäiset kotisivut nettiin',
+  // //   'color': '#e806f8',
+  // // },
+  // {
+  //   'date': new Date('2004-07-30'),
+  //   'description': '1. ulkomaanmatka',
+  //   'color': '#e806f8',
+  // },
   {
     'date': new Date('2007-07-02'),
     'description': 'Lakkiaiset',
@@ -554,6 +604,122 @@ events = [
   },
 ];
 
+// Function to render all predefined and special events on the calendar
+function renderAllCalendarEvents() {
+    // Apply predefined events
+    if (showPredefinedEvents) {
+        events.forEach(e => { // 'events' is the hardcoded global list
+            write_life_event(e);
+        });
+    }
+
+    // Apply user-defined special events
+    specialEvents.forEach(userEvent => { // userEvent is {name, date, frequency}
+        const allInstances = generateRecurringEvents(userEvent);
+        allInstances.forEach(instance => {
+            // instance has {date, name, description, color, frequency}
+            // write_life_event expects description, color.
+            write_life_event({
+                date: instance.date,
+                description: instance.description, // or instance.name
+                color: instance.color, // Color set by generateRecurringEvents
+                // icon: instance.icon, // generateRecurringEvents doesn't currently handle icons for user events
+                frequency: instance.frequency // for tooltip
+            });
+        });
+    });
+}
+
+// Function to update the legend based on active periods
+function updateLegend() {
+  const legendContainer = document.getElementById('legend-container');
+  const legendItems = document.querySelector('.legend-items');
+  
+  // Clear existing legend items
+  legendItems.innerHTML = '';
+  
+  // Create legend items based on active periods
+  const legendData = [];
+  
+  // Birthday legend item (always show)
+  if (customSettings.birthdays.enabled) { // Changed from highlightBirthdays
+    legendData.push({
+      color: 'var(--color-birthday)',
+      label: 'Semaines d\'anniversaire'
+    });
+  }
+  
+  // Special events legend item (always show if there are any or if predefined are shown)
+  if (specialEvents.length > 0 || showPredefinedEvents) {
+    legendData.push({
+      color: 'var(--color-special-event)',
+      label: 'Événements spéciaux'
+    });
+  }
+  
+  // Life periods legend
+  if (customSettings.academic.enabled) {
+    legendData.push({
+      color: 'var(--color-academic)',
+      label: 'Période académique'
+    });
+  }
+  
+  if (customSettings.work.enabled) {
+    legendData.push({
+      color: 'var(--color-work)',
+      label: 'Période de travail'
+    });
+  }
+  
+  if (customSettings.parents.enabled) {
+    legendData.push({
+      color: 'var(--color-parents)',
+      label: 'Temps avec parents'
+    });
+  }
+  
+  if (customSettings.siblings.enabled) {
+    legendData.push({
+      color: 'var(--color-siblings)',
+      label: 'Temps avec fratrie'
+    });
+  }
+  
+  if (customSettings.grandparents.enabled) {
+    legendData.push({
+      color: 'var(--color-grandparents)',
+      label: 'Temps avec grands-parents'
+    });
+  }
+  
+  // If no active periods, hide the legend
+  if (legendData.length === 0) {
+    legendContainer.style.display = 'none';
+    return;
+  }
+  
+  // Show the legend container
+  legendContainer.style.display = 'block';
+  
+  // Add legend items
+  legendData.forEach(item => {
+    const legendItem = document.createElement('div');
+    legendItem.classList.add('legend-item');
+    
+    const colorBox = document.createElement('div');
+    colorBox.classList.add('legend-color');
+    colorBox.style.backgroundColor = item.color;
+    
+    const label = document.createElement('span');
+    label.textContent = item.label;
+    
+    legendItem.appendChild(colorBox);
+    legendItem.appendChild(label);
+    legendItems.appendChild(legendItem);
+  });
+}
+
 // Initialize options panel
 document.addEventListener('DOMContentLoaded', function() {
   // Toggle options panel
@@ -565,26 +731,8 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleBtn.textContent = optionsContainer.classList.contains('hidden') ? 'Afficher les options' : 'Masquer les options';
   });
   
-  // Toggle dark/light mode
-  const toggleThemeBtn = document.getElementById('toggle-theme');
-  if (toggleThemeBtn) {
-    // Check if user has a saved theme preference
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      document.documentElement.setAttribute('data-theme', savedTheme);
-      toggleThemeBtn.textContent = savedTheme === 'dark' ? '☀️ Mode clair' : '🌙 Mode sombre';
-    }
-    
-    toggleThemeBtn.addEventListener('click', function() {
-      const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-      
-      document.documentElement.setAttribute('data-theme', newTheme);
-      localStorage.setItem('theme', newTheme);
-      
-      toggleThemeBtn.textContent = newTheme === 'dark' ? '☀️ Mode clair' : '🌙 Mode sombre';
-    });
-  }
+  // Force dark theme
+  document.documentElement.setAttribute('data-theme', 'dark');
   
   // Set default birthdate to the one defined at the top
   if (document.getElementById('custom-birthdate')) {
@@ -601,9 +749,13 @@ document.addEventListener('DOMContentLoaded', function() {
     toggle.addEventListener('change', function() {
       const modifierName = this.id.replace('-toggle', '');
       const valueInput = document.getElementById(`${modifierName}-modifier`);
+      const modifierValueDiv = valueInput.closest('.modifier-value'); // Get the parent .modifier-value
       
       lifeModifiers[modifierName].enabled = this.checked;
       valueInput.disabled = !this.checked;
+      if (modifierValueDiv) { // Check if modifierValueDiv exists
+        modifierValueDiv.style.display = this.checked ? 'block' : 'none';
+      }
     });
   });
   
@@ -613,22 +765,24 @@ document.addEventListener('DOMContentLoaded', function() {
       const periodName = this.id.replace('-toggle', '');
       const periodValues = this.parentElement.parentElement.querySelector('.period-value');
       
-      customSettings[periodName].enabled = this.checked;
-      periodValues.style.display = this.checked ? 'block' : 'none';
+      if (customSettings[periodName]) { // Ensure the setting exists
+        customSettings[periodName].enabled = this.checked;
+      }
+      
+      if (periodValues) { // Check if periodValues exists before accessing style
+        periodValues.style.display = this.checked ? 'block' : 'none';
+      }
     });
   });
   
-  // Set up display mode radio buttons
-  document.querySelectorAll('input[name="display-mode"]').forEach(radio => {
-    radio.addEventListener('change', function() {
-      displayMode = this.value;
+  // Set up predefined events toggle
+  const showPredefinedEventsToggle = document.getElementById('show-predefined-events');
+  if (showPredefinedEventsToggle) {
+    showPredefinedEventsToggle.checked = showPredefinedEvents; // Set initial state
+    showPredefinedEventsToggle.addEventListener('change', function() {
+      showPredefinedEvents = this.checked;
     });
-  });
-  
-  // Set up birthday highlight toggle
-  document.getElementById('highlight-birthdays').addEventListener('change', function() {
-    highlightBirthdays = this.checked;
-  });
+  }
   
   // Event handlers for the special events
   document.getElementById('add-event-btn').addEventListener('click', function() {
@@ -703,6 +857,9 @@ document.addEventListener('DOMContentLoaded', function() {
       customSettings.grandparents.expectancy = parseInt(document.getElementById('grandparents-expectancy').value);
     }
     
+    // Update predefined events setting
+    showPredefinedEvents = document.getElementById('show-predefined-events').checked;
+    
     // Recalculate weeks left
     weeksLeft = returnWeeks(myBirthDay);
     progress = Math.ceil(totalWeeksInLife) - Math.ceil(weeksLeft) + ' weeks lived. ' + weeksLeft + ' weeks left of all total ' + Math.ceil(totalWeeksInLife) + ' weeks available.';
@@ -714,70 +871,54 @@ document.addEventListener('DOMContentLoaded', function() {
     let calendar = document.getElementById('calendar');
     populate_calendar(new Date(myBirthDay), myLifeExpectancy);
     
-    // Clear existing event tracking before applying events
-    document.querySelectorAll('.week-cell').forEach(cell => {
-      // Delete any existing event tracking
-      delete cell.dataset.eventIds;
-    });
+    // `populate_calendar` creates fresh cells, so `dataset.eventIds` are clear.
+    // No need to manually clear `dataset.eventIds` here if populate_calendar rebuilds fully.
+
+    // Apply all events (predefined and special)
+    renderAllCalendarEvents();
     
-    // Apply original events
-    events.forEach(e => {
-      write_life_event(e);
-    });
-    
-    // Apply life periods
-    const birthDate = new Date(myBirthDay);
-    document.querySelectorAll('.week-cell').forEach((weekCell, index) => {
+    // Apply life periods (academic, work, birthdays, etc.)
+    const birthDateForPeriods = new Date(myBirthDay);
+    document.querySelectorAll('.week-cell').forEach(weekCell => { // Removed 'index' as it's not used by new applyLifePeriods
       if (!weekCell.classList.contains('invisible')) {
-        applyLifePeriods(weekCell, birthDate, index);
+        applyLifePeriods(weekCell, birthDateForPeriods);
       }
     });
     
-    // Apply user's custom events with frequency handling - Fixed
-    specialEvents.forEach(event => {
-      // For debugging
-      // console.log(`Processing event: ${event.name} on ${event.date} (${event.frequency})`);
-      // Make sure the event date is a proper Date object for processing
-      const eventObj = {
-        ...event,
-        date: new Date(event.date)
-      };
-      
-      const recurringEvents = generateRecurringEvents(eventObj);
-      
-      recurringEvents.forEach(recurringEvent => {
-        write_life_event({
-          'date': new Date(recurringEvent.date),
-          'description': recurringEvent.name,
-          'color': 'var(--color-special-event)',
-          'frequency': recurringEvent.frequency
-        });
-      });
-    });
+    // Update legend after settings are applied
+    updateLegend();
   });
   
   // Initialize display states based on toggles
   document.querySelectorAll('.modifier-toggle').forEach(toggle => {
     const modifierName = toggle.id.replace('-toggle', '');
     const valueInput = document.getElementById(`${modifierName}-modifier`);
+    const modifierValueDiv = valueInput.closest('.modifier-value'); // Get the parent .modifier-value
+
+    // Set initial checked state from lifeModifiers
+    if (lifeModifiers[modifierName]) {
+        toggle.checked = lifeModifiers[modifierName].enabled;
+    }
     valueInput.disabled = !toggle.checked;
+    if (modifierValueDiv) { // Check if modifierValueDiv exists
+      modifierValueDiv.style.display = toggle.checked ? 'block' : 'none';
+    }
   });
   
   document.querySelectorAll('.period-toggle').forEach(toggle => {
+    const periodName = toggle.id.replace('-toggle', '');
     const periodValues = toggle.parentElement.parentElement.querySelector('.period-value');
-    periodValues.style.display = toggle.checked ? 'block' : 'none';
+    // Set initial checked state from customSettings
+    if (customSettings[periodName]) {
+        toggle.checked = customSettings[periodName].enabled;
+    }
+    if (periodValues) { // Check if periodValues exists
+      periodValues.style.display = toggle.checked ? 'block' : 'none';
+    }
   });
   
-  // Initialize theme based on system preference if no saved preference
-  if (!localStorage.getItem('theme')) {
-    const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
-    if (prefersDarkScheme.matches) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-      if (toggleThemeBtn) {
-        toggleThemeBtn.textContent = '☀️ Mode clair';
-      }
-    }
-  }
+  // Initialize the legend
+  updateLegend();
 });
 
 // Update events list display
@@ -825,20 +966,18 @@ function updateEventsList() {
 let calendar = document.getElementById('calendar');
 populate_calendar(new Date(myBirthDay), myLifeExpectancy);
 
-// Clear any existing event tracking
-document.querySelectorAll('.week-cell').forEach(cell => {
-  delete cell.dataset.eventIds;
-});
+// `populate_calendar` creates fresh cells.
 
-// Apply events
-events.forEach(e => {
-  write_life_event(e);
-});
+// Apply all events (predefined and special) for initial load
+renderAllCalendarEvents();
 
-// Apply life periods after calendar is populated
-const birthDate = new Date(myBirthDay);
-document.querySelectorAll('.week-cell').forEach((weekCell, index) => {
+// Apply life periods after calendar is populated for initial load
+const initialBirthDate = new Date(myBirthDay);
+document.querySelectorAll('.week-cell').forEach(weekCell => { // Removed 'index'
   if (!weekCell.classList.contains('invisible')) {
-    applyLifePeriods(weekCell, birthDate, index);
+    applyLifePeriods(weekCell, initialBirthDate);
   }
 });
+
+// Initial legend update
+updateLegend();
