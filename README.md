@@ -17,3 +17,5 @@ The code is hybrid of [sunday](https://github.com/ronilaukkarinen/sunday) and [m
 * Shows weeks left
 
 ![_C__Users_Rolle_Projects_memento-mori_index html](https://user-images.githubusercontent.com/1534150/187994535-24eb152e-e935-450a-9a62-5c8ac14bd954.png)
+
+A big thank you to [ronilaukkarinen's memento-mori](https://github.com/ronilaukkarinen/memento-mori) for the original project. 
