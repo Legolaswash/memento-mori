@@ -1,86 +1,147 @@
+/*******************************************************************************
+ * ROOT VARIABLES
+ ******************************************************************************/
 :root {
+  /* Layout variables */
   --columns-per-row: 16;
-  --color-background: #fff;
-  --color-dark-gray: #333;
-  --color-dark-gray-filled: #888;
-  --color-black: #000;
-  --color-white: #fff;
   --rect-gap: 6px;
   --week-gap: 2px;
   --week-size: 4px;
   --month-gap: 10px;
-
-  /* Do not change these */
   --month-cell-width: calc(calc(calc(var(--week-size) * 4) + calc(var(--week-gap) * 4) * 4));
   --calendar-width: calc(calc(var(--month-cell-width) * var(--columns-per-row)) - calc(var(--month-cell-width) * 3));
+  
+  /* Colors - Dark theme (default) */
+  --color-background: #0d1117;
+  --color-dark-gray: #c9d1d9;
+  --color-dark-gray-filled: #c9d1d9;
+  --color-black: #fff;
+  --color-white: #0d1117;
+  --color-text: #c9d1d9;
+  --color-option-bg: #2a2a2a;
+  --color-input-bg: #333;
+  --color-input-border: #444;
+  --color-container-bg: #1a1a1a;
+  --color-button-bg: #555;
+  --color-button-text: #fff;
+  --color-accent: #58a6ff;
+  --color-card-shadow: rgba(0, 0, 0, 0.4);
+  --color-hover-bg: #2a2a2a;
+  --color-border-light: #30363d;
+  
+  /* Period colors */
+  --color-academic: #4285f4;
+  --color-parents: #ea4335;
+  --color-siblings: #fbbc05;
+  --color-grandparents: #34a853;
+  --color-work: #673ab7;
+  --color-special-event: #ff5722;
+  --color-birthday: #e91e63;
 }
 
-.calendar {
-  display: grid;
-  grid-gap: var(--month-gap);
-  grid-template-columns: repeat(var(--columns-per-row), auto);
-  padding-top: 60px;
-  width: 100%;
-}
-
+/*******************************************************************************
+ * BASIC STYLES
+ ******************************************************************************/
+/* Base styles */
 body {
   background-color: var(--color-background);
   font-family: Inter, sans-serif;
   margin: 0;
   padding: 0;
+  color: var(--color-text);
 }
 
-@page  {
-  size: a4 portrait;
+/* Global transitions for smooth interactions */
+body, .calendar, .options-container, input, select, button, .event-item,
+.modifier-item, .period-item, .event-item, .birthday-highlight, .legend-item {
+  transition: all 0.3s ease;
 }
 
-@media print {
-  .week-cell {
-    -webkit-print-color-adjust: exact;
-  }
-}
-
+/* Typography */
 .title {
   color: var(--color-dark-gray);
   font-size: 50px;
   font-weight: 700;
-  margin: 60px 0;
   text-align: center;
 }
 
-.wrapper,
-.quote {
+/*******************************************************************************
+ * LAYOUT AND CONTAINERS
+ ******************************************************************************/
+/* Main content containers */
+.wrapper, .quote {
   font-size: 12px;
-  margin: 60px auto;
+  margin: 25px auto;
   max-width: var(--calendar-width);
   padding: 0 2rem;
   width: calc(100% - 4rem);
 }
 
+/* Statistics container styling */
 .stats.wrapper {
-  margin-bottom: 0;
-  margin-top: 0;
-  opacity: .7;
+  margin: 12px auto;
+  opacity: 0.7;
   padding: 0;
   text-align: right;
   transform: translateX(5px);
 }
 
-@media (max-width: 660px) {
-  .stats.wrapper {
-    max-width: 80%;
-    text-align: center;
-    transform: none;
-  }
+.weeksleft-label, .daysleft-label, .yearsleft-label {
+  margin: 0.3em 0;
 }
 
-@media screen {
-  .calendar {
-    justify-content: center;
-    margin: auto;
-  }
+/*******************************************************************************
+ * CALENDAR GRID LAYOUT
+ ******************************************************************************/
+/* Main calendar grid */
+.calendar {
+  display: grid;
+  grid-gap: var(--month-gap);
+  grid-template-columns: repeat(var(--columns-per-row), auto);
+  width: 100%;
+  justify-content: center;
+  margin: auto;
 }
 
+/* Year cell container */
+.year-cell {
+  display: grid;
+  gap: var(--week-gap);
+}
+
+/* Year wrapper with positioning context */
+.year-wrapper {
+  position: relative;
+  z-index: 0;
+}
+
+/* Increase z-index on hover to show tooltips above other content */
+.year-wrapper:hover {
+  z-index: 99999999;
+}
+
+/* Month cells within year */
+.month-cell {
+  display: grid;
+  gap: var(--week-gap);
+  grid-template-columns: repeat(4, calc(var(--week-size) + var(--week-gap)));
+  max-width: var(--month-cell-width);
+  transition: all 150ms;
+}
+
+/* Year label typography */
+.year-label {
+  font-size: 12px;
+  font-weight: 400;
+  margin-bottom: 4px;
+  margin-top: 0;
+  text-align: center;
+}
+
+/*******************************************************************************
+ * WEEK CELLS - VISUAL STATES
+ ******************************************************************************/
+/* Basic week cell styling */
 .week-cell {
   align-items: center;
   border: 1px solid var(--color-dark-gray);
@@ -90,93 +151,102 @@ body {
   width: var(--week-size);
 }
 
+/* Filled week cells (past dates) */
 .week-cell.filled {
-  /* stylelint-disable-next-line */
   background-color: var(--color-dark-gray-filled);
-  /* stylelint-disable-next-line */
   border-color: var(--color-dark-gray-filled);
 }
 
-@keyframes pulse {
-  0% {
-    border-radius: 0;
-    box-shadow: 0 0 0 0 currentColor;
-    font-size: 7px;
-  }
-
-  50% {
-    border-radius: 25%;
-    box-shadow: 0 0 0 3px currentColor;
-    font-size: 15px;
-  }
-
-  100% {
-    border-radius: 0;
-    box-shadow: 0 0 0 0 currentColor;
-    font-size: 7px;
-  }
+/* Unfilled week cells (future dates) */
+.week-cell:not(.filled) {
+  opacity: 0.8;
 }
 
+/* Hidden weeks (before birth date) */
+.week-cell.invisible,
+.invisible {
+  background-color: var(--color-background) !important;
+  border: 1px solid var(--color-background) !important;
+}
+
+/* Week cells with tooltips */
 .week-cell.has-tooltip {
-  /* animation: pulse 2s infinite; */
   border-color: currentColor;
   border-radius: 0;
   font-size: 7px;
   position: relative;
 }
 
-.week-cell:not(.filled) {
-  opacity: .8;
+/*******************************************************************************
+ * LIFE PERIOD STYLES
+ ******************************************************************************/
+/* Common styles for all period types */
+.week-cell.academic,
+.week-cell.parents,
+.week-cell.siblings,
+.week-cell.grandparents,
+.week-cell.work,
+.week-cell.birthday {
+  border-width: 1px !important;
 }
 
-.week-cell.invisible,
-.invisible {
-  /* stylelint-disable-next-line */
-  background-color: var(--color-background) !important;
-  /* stylelint-disable-next-line */
-  border: 1px solid var(--color-background) !important;
+/* Academic period */
+.week-cell.academic {
+  border-color: var(--color-academic) !important;
 }
 
-.year-cell {
-  display: grid;
-  gap: var(--week-gap);
+/* Parents period */
+.week-cell.parents {
+  border-color: var(--color-parents) !important;
 }
 
-.year-wrapper {
-  position: relative;
-  z-index: 0;
+/* Siblings period */
+.week-cell.siblings {
+  border-color: var(--color-siblings) !important;
 }
 
-.year-wrapper:hover {
-  z-index: 99999999;
+/* Grandparents period */
+.week-cell.grandparents {
+  border-color: var(--color-grandparents) !important;
 }
 
-.month-cell {
-  display: grid;
-  gap: var(--week-gap);
-  grid-template-columns: repeat(4, calc(var(--week-size) + var(--week-gap)));
-  max-width: var(--month-cell-width);
-  transition: all 150ms;
+/* Work period */
+.week-cell.work {
+  border-color: var(--color-work) !important;
 }
 
-.year-label {
-  font-size: 12px;
-  font-weight: 400;
-  margin-bottom: 4px;
-  margin-top: 0;
-  text-align: center;
+/* Birthday weeks */
+.week-cell.birthday {
+  border-color: var(--color-birthday) !important;
 }
 
-/* Tooltips */
+/* Special events */
+.week-cell.event {
+  background-color: var(--color-special-event) !important;
+  border-color: var(--color-special-event) !important;
+}
+
+/* Outline style for special cases */
+.week-cell.outline {
+  background-color: transparent !important;
+  border-width: 2px !important;
+}
+
+/*******************************************************************************
+ * TOOLTIPS
+ ******************************************************************************/
+/* Basic tooltip setup */
 [data-tooltip] {
   cursor: default;
   position: relative;
 }
 
+/* Change cursor on hover */
 [data-tooltip]:hover {
   cursor: help;
 }
 
+/* Tooltip content bubble */
 [data-tooltip]:hover::before {
   animation: fade-in 150ms ease;
   background-color: var(--color-black);
@@ -197,6 +267,7 @@ body {
   z-index: 20000;
 }
 
+/* Tooltip arrow */
 [data-tooltip]:hover::after {
   animation: fade-in 150ms ease;
   border: 1px solid var(--color-black);
@@ -213,54 +284,285 @@ body {
   z-index: 1;
 }
 
+/*******************************************************************************
+ * ANIMATIONS
+ ******************************************************************************/
+/* Fade-in animation for tooltips */
 @keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-/* Mobile responsiveness */
-@media (max-width: 740px) {
-  .calendar {
-    grid-template-columns: repeat(16, auto);
-  }
+/*******************************************************************************
+ * OPTIONS PANEL
+ ******************************************************************************/
+/* Options panel container */
+.options-panel {
+  margin-bottom: 20px;
 }
 
-@media (max-width: 660px) {
-  .calendar {
-    grid-template-columns: repeat(12, auto);
-  }
+/* Options expanded container */
+.options-container {
+  background-color: var(--color-container-bg);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+  padding: 20px;
+  max-height: 2000px; /* Large enough for all content */
+  opacity: 1;
+  overflow: hidden;
+  transform-origin: top;
+  transform: scaleY(1);
+  transition: all 0.5s ease;
 }
 
-@media (max-width: 500px) {
-  .calendar {
-    grid-template-columns: repeat(10, auto);
-  }
+/* Collapsed options container */
+.options-container.hidden {
+  max-height: 0;
+  opacity: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+  transform: scaleY(0);
 }
 
-@media (max-width: 430px) {
-  .calendar {
-    grid-template-columns: repeat(8, auto);
-  }
+/* Hidden elements */
+.hidden {
+  display: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-dark-gray: #c9d1d9;
-    --color-dark-gray-filled: #c9d1d9;
-    --color-background: #0d1117;
-  }
-
-  body {
-    background-color: var(--color-background);
-    color: #c9d1d9;
-  }
+/*******************************************************************************
+ * FORM ELEMENTS
+ ******************************************************************************/
+/* Row of form elements */
+.form-row {
+  display: flex;
+  gap: 20px;
+  align-items: flex-end;
+  margin-bottom: 15px;
 }
 
+/* Form groups within a row */
+.form-row .form-group {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+/* Standard form group */
+.form-group {
+  margin-bottom: 15px;
+}
+
+/* Form labels */
+.form-group label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+/* Form inputs styling */
+.form-group input, 
+#add-event-form input, 
+#event-frequency {
+  background-color: var(--color-input-bg);
+  border: 1px solid var(--color-input-border);
+  color: var(--color-text);
+  border-radius: 4px;
+  padding: 8px;
+  margin-right: 5px;
+}
+
+/*******************************************************************************
+ * BUTTONS
+ ******************************************************************************/
+/* General button styles */
+.toggle-btn, .primary-btn {
+  background-color: var(--color-button-bg);
+  border: none;
+  border-radius: 4px;
+  color: var(--color-button-text);
+  cursor: pointer;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 16px;
+  transition: all 0.2s ease;
+}
+
+/* Button hover effects */
+.toggle-btn:hover, .primary-btn:hover {
+  background-color: var(--color-accent);
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* Add event button special styling */
+#add-event-btn {
+  grid-column: 2;
+  background-color: var(--color-special-event);
+  border: 1px solid #ff1400;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  padding: 8px 12px;
+}
+
+/*******************************************************************************
+ * LIFE MODIFIERS SECTION
+ ******************************************************************************/
+/* Life modifiers container */
+.life-expectancy-modifiers {
+  border-top: 1px solid var(--color-border-light);
+  margin-top: 20px;
+  padding-top: 15px;
+}
+
+/* Life modifiers grid layout */
+.life-expectancy-modifiers .period-group {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/* Standard period group layout */
+.period-group {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  column-gap: 10px;
+  margin-top: 10px;
+}
+
+/* Checkbox wrapper for toggles */
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Item cards for options */
+.modifier-item, .period-item, .event-item, .birthday-highlight {
+  background-color: var(--color-option-bg);
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 12px;
+}
+
+/* Hover effect for option cards */
+.modifier-item:hover, .period-item:hover, .birthday-highlight:hover {
+  transform: translateY(-2px);
+}
+
+/* Value inputs for modifiers and periods */
+.modifier-value, .period-value {
+  margin-top: 8px;
+  padding-left: 24px;
+}
+
+/* Range input rows */
+.period-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+/* Number inputs in period settings */
+.period-range input[type="number"] {
+  width: 60px;
+}
+
+/*******************************************************************************
+ * EVENTS SECTION
+ ******************************************************************************/
+/* Add event form */
+#add-event-form {
+  margin-bottom: 5px;
+}
+
+/* Event item in list */
+.event-item {
+  background-color: var(--color-option-bg);
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-bottom: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/*******************************************************************************
+ * LEGEND
+ ******************************************************************************/
+/* Legend container */
+.legend-container {
+  background-color: var(--color-container-bg);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px var(--color-card-shadow);
+  padding: 20px;
+  margin: 40px auto;
+}
+
+/* Legend title */
+.legend-container h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 18px;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+/* Legend items container */
+.legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+/* Individual legend item */
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+/* Legend item hover effect */
+.legend-item:hover {
+  transform: translateY(-2px);
+}
+
+/* Legend color box */
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 1px solid var(--color-border-light);
+}
+
+/*******************************************************************************
+ * FOOTER LINKS
+ ******************************************************************************/
+/* GitHub link wrapper */
+.github-link-wrapper {
+  margin: 0 auto 60px;
+  max-width: var(--calendar-width);
+  padding: 0 2rem;
+  width: calc(100% - 4rem);
+}
+
+/* GitHub link styling */
+.github-link-wrapper a {
+  align-items: center;
+  color: #fff;
+  display: inline-flex;
+  font-size: 12px;
+  gap: 0.6rem;
+  text-decoration: none;
+}
+
+/*******************************************************************************
+ * ACCESSIBILITY
+ ******************************************************************************/
+/* Screen reader text - visually hidden but available to screen readers */
 .screen-reader-text {
   border: 0;
   clip: rect(1px, 1px, 1px, 1px);
@@ -271,22 +573,58 @@ body {
   padding: 0;
   position: absolute;
   width: 1px;
-  /* stylelint-disable-next-line */
   word-wrap: normal !important;
 }
 
-.github-link-wrapper {
-  margin: 0 auto 60px;
-  max-width: var(--calendar-width);
-  padding: 0 2rem;
-  width: calc(100% - 4rem);
+/*******************************************************************************
+ * PRINT STYLES
+ ******************************************************************************/
+/* Page size for printing */
+@page {
+  size: a4 portrait;
 }
 
-.github-link-wrapper a {
-  align-items: center;
-  color: var(--color-white);
-  display: inline-flex;
-  font-size: 12px;
-  gap: .6rem;
-  text-decoration: none;
+/* Print color adjustments */
+@media print {
+  .week-cell {
+    -webkit-print-color-adjust: exact;
+  }
 }
+
+/*******************************************************************************
+ * RESPONSIVE MEDIA QUERIES
+ ******************************************************************************/
+/* Large tablet/small desktop */
+@media (max-width: 740px) {
+  .calendar {
+    grid-template-columns: repeat(16, auto);
+  }
+}
+
+/* Tablet */
+@media (max-width: 660px) {
+  .calendar {
+    grid-template-columns: repeat(12, auto);
+  }
+  
+  .stats.wrapper {
+    max-width: 80%;
+    text-align: center;
+    transform: none;
+  }
+}
+
+/* Large mobile */
+@media (max-width: 500px) {
+  .calendar {
+    grid-template-columns: repeat(10, auto);
+  }
+}
+
+/* Small mobile */
+@media (max-width: 430px) {
+  .calendar {
+    grid-template-columns: repeat(8, auto);
+  }
+}
+
