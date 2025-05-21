@@ -733,7 +733,7 @@ function renderAllCalendarEvents() {
  * UI COMPONENTS
  * Functions to manage UI elements like the legend and events list
  ******************************************************************************/
-// Adjust title margin based on selected layout
+// Adjust title margin based on selected layout (so the citations appears fully)
 function adjustTitleMargin() {
   const titleElement = document.querySelector('.title');
   if (titleElement) {
