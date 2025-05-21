@@ -11,6 +11,11 @@
   --month-cell-width: calc(calc(calc(var(--week-size) * 4) + calc(var(--week-gap) * 4) * 4));
   --calendar-width: calc(calc(var(--month-cell-width) * var(--columns-per-row)) - calc(var(--month-cell-width) * 3));
   
+  /* Alternative layout variables */
+  --rows-per-rect: 10;
+  --cols-per-rect: 26;
+  --decade-gap: 20px;
+  
   /* Colors - Dark theme (default) */
   --color-background: #0d1117;
   --color-dark-gray: #c9d1d9;
@@ -625,6 +630,69 @@ body, .calendar, .options-container, input, select, button, .event-item,
 @media (max-width: 430px) {
   .calendar {
     grid-template-columns: repeat(8, auto);
+  }
+}
+
+/*******************************************************************************
+ * ALTERNATIVE LAYOUT STYLES
+ ******************************************************************************/
+/* Rectangle container for alternative layout */
+.rect-container {
+  display: grid;
+  grid-template-columns: repeat(var(--cols-per-rect), calc(var(--week-size) + var(--week-gap)));
+  grid-template-rows: repeat(var(--rows-per-rect), calc(var(--week-size) + var(--week-gap)));
+  gap: var(--week-gap);
+  /* margin-bottom: var(--decade-gap); */
+}
+
+/* Alternative layout calendar container */
+.calendar.alternative-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+/* Decade label for alternative layout */
+.decade-label {
+  /* font-size: 14px; */
+  /* font-weight: 500; */
+  margin: 5px 0; /* 10px */
+  /* text-align: center; */
+}
+
+/* Decade container with two rectangles */
+.decade-container {
+  display: flex;
+  gap: 10px; /* 20px */
+  /* margin-bottom: 10px; */
+  justify-content: center;
+  position: relative;
+}
+
+/* Age label that appears at the bottom right of each decade group */
+.decade-age-label {
+  position: absolute;
+  /* top: 50%; */
+  bottom: 0%;
+  right: -25px;
+  /* transform: translateY(170%); */
+  font-size: 11px;
+  color: var(--color-text);
+  opacity: 0.8;
+  font-weight: 500;
+}
+
+/* Responsive adjustments for alternative layout */
+@media (max-width: 700px) {
+  .decade-container {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .decade-age-label {
+    right: -20px;
+    top: 50%;
   }
 }
 

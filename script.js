@@ -6,6 +6,9 @@ let myBirthDay = '2004-09-04';
 let myLifeExpectancy = 79;
 let totalWeeksInLife = myLifeExpectancy * 52.1429; // 52.1429 weeks per year (Gregorian calendar)
 
+// Layout settings
+let useAlternativeLayout = false; // Default to standard layout
+
 // Life modifiers settings - factors that can increase or decrease life expectancy
 const lifeModifiers = {
   exercise: { enabled: false, value: 2 },
@@ -127,6 +130,299 @@ function getWeekIdFromDate(date) {
   weekInMonth = Math.min(weekInMonth, 4);
   
   return `${year}-${month}-${weekInMonth}`;
+}
+
+/*******************************************************************************
+ * ALTERNATIVE LAYOUT CALENDAR GENERATION
+ * Functions to build and populate the alternative visual calendar
+ ******************************************************************************/
+// Helper to get CSS variables
+function getCssVariable(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name);
+}
+
+// Generate a single week cell
+function createWeekCell() {
+  const div = document.createElement('div');
+  div.classList.add('week-cell');
+  return div;
+}
+
+// Create a rectangle of week cells
+function createRectangle(rows, cols) {
+  const rect = document.createElement('div');
+  rect.classList.add('rect-container');
+  
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      rect.appendChild(createWeekCell());
+    }
+  }
+  
+  return rect;
+}
+
+// Create a decade block with two rectangles
+function createDecadeBlock(decade) {
+  const decadeContainer = document.createElement('div');
+  decadeContainer.classList.add('decade-container');
+  
+  // Add label for this decade
+  const label = document.createElement('div');
+  label.classList.add('decade-label');
+  // label.textContent = `Decade ${decade + 1}`;
+  
+  // Create two rectangles per decade
+  for (let i = 0; i < 2; i++) {
+    const rowsPerRect = parseInt(getCssVariable('--rows-per-rect'));
+    const colsPerRect = parseInt(getCssVariable('--cols-per-rect'));
+    
+    const rect = createRectangle(rowsPerRect, colsPerRect);
+    rect.id = `rect-${decade}-${i}`;
+    decadeContainer.appendChild(rect);
+  }
+  
+  // Add age label at the right side (decade number × 10 years) - only the number
+  const ageLabel = document.createElement('div');
+  ageLabel.classList.add('decade-age-label');
+  ageLabel.textContent = `${(decade + 1) * 10}`;
+  decadeContainer.appendChild(ageLabel);
+  
+  return { label, container: decadeContainer };
+}
+
+// Set IDs for all week cells
+function setWeekCellIds(numDecades) {
+  const colsPerRect = parseInt(getCssVariable('--cols-per-rect'));
+  const weeksPerYear = colsPerRect * 2;
+  const weeksPerDecade = weeksPerYear * 10;
+  
+  for (let decade = 0; decade < numDecades; decade++) {
+    const decadeWeeks = decade * weeksPerDecade;
+    
+    for (let rect = 0; rect < 2; rect++) {
+      const rectElement = document.getElementById(`rect-${decade}-${rect}`);
+      if (!rectElement) continue;
+      
+      const rectWeeks = rect * colsPerRect;
+      const cells = rectElement.querySelectorAll('.week-cell');
+      
+      cells.forEach((cell, index) => {
+        const rowsPerRect = parseInt(getCssVariable('--rows-per-rect'));
+        const rectRow = Math.floor(index / colsPerRect);
+        const offset = index % colsPerRect;
+        const id = decadeWeeks + rectRow * weeksPerYear + rectWeeks + offset;
+        
+        cell.id = `week-${id}`;
+      });
+    }
+  }
+}
+
+// Fill the calendar with decade blocks
+function populateAlternativeCalendar(numDecades) {
+  const root = document.getElementById('calendar');
+  
+  // Clear existing content
+  root.innerHTML = '';
+  
+  // Add alternative layout class
+  root.classList.add('alternative-layout');
+  
+  // Add decade blocks
+  for (let i = 0; i < numDecades; i++) {
+    const { label, container } = createDecadeBlock(i);
+    root.appendChild(label);
+    root.appendChild(container);
+  }
+  
+  // Set IDs for all week cells
+  setWeekCellIds(numDecades);
+}
+
+// Fill weeks from birth date to current date
+function fillAlternativeCalendar(birthday) {
+  // Parse birthday
+  const bday = new Date(birthday);
+  const now = new Date();
+  
+  // Calculate days between birthday and now
+  const dayDiff = (now - bday) / (1000 * 3600 * 24);
+  
+  // Calculate total weeks lived
+  const years = Math.floor(dayDiff / 365);
+  const remainingWeeks = Math.floor((dayDiff % 365) / 7);
+  const numWeeks = years * 26 * 2 + remainingWeeks;
+  
+  // Fill each week that has passed
+  for (let week = 0; week < numWeeks; week++) {
+    const weekCell = document.getElementById(`week-${week}`);
+    if (weekCell) {
+      weekCell.classList.add('filled');
+      weekCell.style.backgroundColor = 'var(--color-dark-gray-filled)';
+      weekCell.style.borderColor = 'var(--color-dark-gray-filled)';
+    }
+  }
+  
+  // Return total weeks for reference
+  return numWeeks;
+}
+
+// Apply life events to alternative layout
+function applyEventsToAlternativeLayout() {
+  // If predefined events are enabled, apply them
+  if (showPredefinedEvents && predefinedEvents.length > 0) {
+    predefinedEvents.forEach(event => {
+      const eventDate = new Date(event.date);
+      const bday = new Date(myBirthDay);
+      
+      // Calculate weeks between birthday and event
+      const dayDiff = (eventDate - bday) / (1000 * 3600 * 24);
+      if (dayDiff < 0) return; // Skip events before birth
+      
+      const years = Math.floor(dayDiff / 365);
+      const remainingWeeks = Math.floor((dayDiff % 365) / 7);
+      const weekIndex = years * 26 * 2 + remainingWeeks;
+      
+      const weekCell = document.getElementById(`week-${weekIndex}`);
+      if (weekCell) {
+        weekCell.style.backgroundColor = event.color;
+        weekCell.style.borderColor = event.color;
+        
+        weekCell.classList.add('has-tooltip');
+        weekCell.dataset.tooltip = event.description;
+        
+        if ('icon' in event) {
+          weekCell.insertAdjacentHTML('beforeend', event.icon);
+        }
+      }
+    });
+  }
+  
+  // Apply user-defined special events
+  specialEvents.forEach(userEvent => {
+    const eventDate = new Date(userEvent.date);
+    const bday = new Date(myBirthDay);
+    
+    // Calculate weeks between birthday and event
+    const dayDiff = (eventDate - bday) / (1000 * 3600 * 24);
+    if (dayDiff < 0) return; // Skip events before birth
+    
+    const years = Math.floor(dayDiff / 365);
+    const remainingWeeks = Math.floor((dayDiff % 365) / 7);
+    const weekIndex = years * 26 * 2 + remainingWeeks;
+    
+    const weekCell = document.getElementById(`week-${weekIndex}`);
+    if (weekCell) {
+      weekCell.style.backgroundColor = 'var(--color-special-event)';
+      weekCell.style.borderColor = 'var(--color-special-event)';
+      
+      weekCell.classList.add('has-tooltip');
+      weekCell.dataset.tooltip = userEvent.name;
+    }
+    
+    // Handle recurring events
+    if (userEvent.frequency !== 'once') {
+      const allInstances = generateRecurringEvents(userEvent);
+      
+      allInstances.forEach(instance => {
+        const instanceDate = new Date(instance.date);
+        
+        // Skip the first instance (already handled above)
+        if (instanceDate.getTime() === eventDate.getTime()) return;
+        
+        // Calculate weeks for this instance
+        const instanceDayDiff = (instanceDate - bday) / (1000 * 3600 * 24);
+        if (instanceDayDiff < 0) return; // Skip events before birth
+        
+        const instanceYears = Math.floor(instanceDayDiff / 365);
+        const instanceRemainingWeeks = Math.floor((instanceDayDiff % 365) / 7);
+        const instanceWeekIndex = instanceYears * 26 * 2 + instanceRemainingWeeks;
+        
+        const instanceWeekCell = document.getElementById(`week-${instanceWeekIndex}`);
+        if (instanceWeekCell) {
+          instanceWeekCell.style.backgroundColor = 'var(--color-special-event)';
+          instanceWeekCell.style.borderColor = 'var(--color-special-event)';
+          
+          instanceWeekCell.classList.add('has-tooltip');
+          instanceWeekCell.dataset.tooltip = `${instance.description} (${instance.frequency})`;
+        }
+      });
+    }
+  });
+}
+
+// Apply life periods to alternative layout
+function applyLifePeriodsToAlternativeLayout() {
+  const birthDate = new Date(myBirthDay);
+  
+  document.querySelectorAll('.week-cell').forEach(weekCell => {
+    if (!weekCell.id.startsWith('week-')) return;
+    
+    // Extract week index from ID
+    const weekIndex = parseInt(weekCell.id.replace('week-', ''));
+    
+    // Calculate approximate age for this week
+    const weeksInYear = 52; // Simplified approximation
+    const ageInYears = weekIndex / weeksInYear;
+    
+    // Apply academic period
+    if (customSettings.academic.enabled && 
+        ageInYears >= customSettings.academic.start && 
+        ageInYears < customSettings.academic.end) {
+      weekCell.classList.add('academic');
+    }
+    
+    // Apply work period
+    if (customSettings.work.enabled && 
+        ageInYears >= customSettings.work.start && 
+        ageInYears < customSettings.work.end) {
+      weekCell.classList.add('work');
+    }
+    
+    // Apply family periods
+    const today = new Date();
+    const familyMembers = ['parents', 'siblings', 'grandparents'];
+    
+    familyMembers.forEach(member => {
+      if (customSettings[member].enabled) {
+        // Calculate your current age today
+        const yourCurrentAge = (today - birthDate) / (1000 * 60 * 60 * 24 * 365.25);
+        
+        // Calculate how old you were when they were born
+        const yourAgeWhenTheyWereBorn = yourCurrentAge - customSettings[member].currentAge;
+        
+        // Calculate when they will reach their life expectancy
+        const ageAtTheirEnd = yourAgeWhenTheyWereBorn + customSettings[member].expectancy;
+        
+        // Apply to weeks where appropriate
+        const startAge = Math.max(0, yourAgeWhenTheyWereBorn);
+        
+        if (ageInYears >= startAge && ageInYears < ageAtTheirEnd) {
+          weekCell.classList.add(member);
+        }
+      }
+    });
+    
+    // Apply birthday highlights
+    if (customSettings.birthdays.enabled) {
+      // Get this week's approximate date
+      const weekDate = new Date(birthDate);
+      weekDate.setDate(weekDate.getDate() + (weekIndex * 7));
+      
+      // Check if this week includes birthday
+      if (weekDate.getMonth() === birthDate.getMonth()) {
+        const startDay = weekDate.getDate();
+        const endDay = new Date(weekDate).setDate(startDay + 6);
+        
+        if (birthDate.getDate() >= startDay && birthDate.getDate() <= endDay) {
+          weekCell.classList.add('birthday');
+          weekCell.classList.add('has-tooltip');
+          weekCell.dataset.tooltip = 'Birthday';
+        }
+      }
+    }
+  });
 }
 
 /*******************************************************************************
@@ -437,6 +733,18 @@ function renderAllCalendarEvents() {
  * UI COMPONENTS
  * Functions to manage UI elements like the legend and events list
  ******************************************************************************/
+// Adjust title margin based on selected layout
+function adjustTitleMargin() {
+  const titleElement = document.querySelector('.title');
+  if (titleElement) {
+    if (useAlternativeLayout) {
+      titleElement.style.margin = '10px';
+    } else {
+      titleElement.style.margin = ''; // Reset to default CSS value
+    }
+  }
+}
+
 // Update the legend based on active periods
 function updateLegend() {
   const legendContainer = document.getElementById('legend-container');
@@ -695,19 +1003,28 @@ function initializeApp() {
   // Generate stats
   initializeStats();
   
-  // Create the calendar
-  populateCalendar(new Date(myBirthDay), myLifeExpectancy);
+  // Adjust title margin based on layout
+  adjustTitleMargin();
   
-  // Render events
-  renderAllCalendarEvents();
-  
-  // Apply life periods to all visible cells
-  const birthDate = new Date(myBirthDay);
-  document.querySelectorAll('.week-cell').forEach(weekCell => {
-    if (!weekCell.classList.contains('invisible')) {
-      applyLifePeriods(weekCell, birthDate);
-    }
-  });
+  // Create the calendar based on selected layout
+  if (useAlternativeLayout) {
+    const numDecades = Math.ceil(myLifeExpectancy / 10);
+    populateAlternativeCalendar(numDecades);
+    const weeksLived = fillAlternativeCalendar(myBirthDay);
+    applyEventsToAlternativeLayout();
+    applyLifePeriodsToAlternativeLayout();
+  } else {
+    populateCalendar(new Date(myBirthDay), myLifeExpectancy);
+    renderAllCalendarEvents();
+    
+    // Apply life periods to all visible cells
+    const birthDate = new Date(myBirthDay);
+    document.querySelectorAll('.week-cell').forEach(weekCell => {
+      if (!weekCell.classList.contains('invisible')) {
+        applyLifePeriods(weekCell, birthDate);
+      }
+    });
+  }
   
   // Update legend
   updateLegend();
@@ -815,6 +1132,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   
+  // Set up layout toggle
+  const layoutToggle = document.getElementById('alternative-layout-toggle');
+  if (layoutToggle) {
+    layoutToggle.checked = useAlternativeLayout;
+    layoutToggle.addEventListener('change', function() {
+      useAlternativeLayout = this.checked;
+    });
+  }
+  
   // Set up apply settings button
   document.getElementById('apply-settings').addEventListener('click', function() {
     // Update birth date and life expectancy
@@ -866,22 +1192,38 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update predefined events setting
     showPredefinedEvents = document.getElementById('show-predefined-events').checked;
     
+    // Update layout setting
+    useAlternativeLayout = document.getElementById('alternative-layout-toggle').checked;
+    
+    // Adjust title margin based on new layout
+    adjustTitleMargin();
+    
+    // Clear any previous layout class
+    const calendarElement = document.getElementById('calendar');
+    calendarElement.classList.remove('alternative-layout');
+    
     // Update stats
     document.getElementById('stats').innerHTML = '';
     initializeStats();
     
     // Regenerate calendar
-    populateCalendar(new Date(myBirthDay), myLifeExpectancy);
-    
-    // Apply events and periods
-    renderAllCalendarEvents();
-    
-    const birthDateForPeriods = new Date(myBirthDay);
-    document.querySelectorAll('.week-cell').forEach(weekCell => {
-      if (!weekCell.classList.contains('invisible')) {
-        applyLifePeriods(weekCell, birthDateForPeriods);
-      }
-    });
+    if (useAlternativeLayout) {
+      const numDecades = Math.ceil(myLifeExpectancy / 10);
+      populateAlternativeCalendar(numDecades);
+      const weeksLived = fillAlternativeCalendar(myBirthDay);
+      applyEventsToAlternativeLayout();
+      applyLifePeriodsToAlternativeLayout();
+    } else {
+      populateCalendar(new Date(myBirthDay), myLifeExpectancy);
+      renderAllCalendarEvents();
+      
+      const birthDateForPeriods = new Date(myBirthDay);
+      document.querySelectorAll('.week-cell').forEach(weekCell => {
+        if (!weekCell.classList.contains('invisible')) {
+          applyLifePeriods(weekCell, birthDateForPeriods);
+        }
+      });
+    }
     
     updateLegend();
   });
