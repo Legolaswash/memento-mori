@@ -3,7 +3,7 @@
  * Initial settings and user preferences
  ******************************************************************************/
 let myBirthDay = '2004-09-04';
-let myLifeExpectancy = 80;
+let myLifeExpectancy = 79;
 let totalWeeksInLife = myLifeExpectancy * 52.1429; // 52.1429 weeks per year (Gregorian calendar)
 
 // Life modifiers settings - factors that can increase or decrease life expectancy
@@ -17,9 +17,9 @@ const lifeModifiers = {
 const customSettings = {
   academic: { start: 6, end: 23, enabled: false },
   work: { start: 23, end: 65, enabled: false },
-  parents: { currentAge: 60, expectancy: 85, enabled: false },
-  siblings: { currentAge: 30, expectancy: 82, enabled: false },
-  grandparents: { currentAge: 80, expectancy: 90, enabled: false },
+  parents: { currentAge: 60, expectancy: 82, enabled: false },
+  siblings: { currentAge: 27, expectancy: 85, enabled: false },
+  grandparents: { currentAge: 81, expectancy: 85, enabled: false },
   birthdays: { enabled: false }
 };
 
