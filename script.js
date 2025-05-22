@@ -9,6 +9,26 @@ let totalWeeksInLife = myLifeExpectancy * 52.1429; // 52.1429 weeks per year (Gr
 // Layout settings
 let useAlternativeLayout = false; // Default to standard layout
 
+// Colors - Fetch from CSS variables
+const colorVariables = {
+  // Initialize empty - will be populated on load
+  specialEvent: '',
+  academic: '',
+  work: '',
+  parents: '',
+  siblings: '',
+  grandparents: '',
+  birthday: '',
+  eventBlue: '',
+  eventRed: '',
+  eventYellow: '',
+  eventGreen: '',
+  eventDark: '',
+  eventOrange: '',
+  background: '',
+  darkGrayFilled: ''
+};
+
 // Life modifiers settings - factors that can increase or decrease life expectancy
 const lifeModifiers = {
   exercise: { enabled: false, value: 2 },
@@ -31,6 +51,34 @@ let showPredefinedEvents = true;
 
 // User's special events - custom events added by the user
 let specialEvents = [];
+
+/*******************************************************************************
+ * UTILITY FUNCTIONS
+ * Helper functions for common tasks
+ ******************************************************************************/
+// Get CSS variable value
+function getCssVariable(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+// Load all color variables from CSS
+function loadColorVariables() {
+  colorVariables.specialEvent = getCssVariable('--color-special-event');
+  colorVariables.academic = getCssVariable('--color-academic');
+  colorVariables.work = getCssVariable('--color-work');
+  colorVariables.parents = getCssVariable('--color-parents');
+  colorVariables.siblings = getCssVariable('--color-siblings');
+  colorVariables.grandparents = getCssVariable('--color-grandparents');
+  colorVariables.birthday = getCssVariable('--color-birthday');
+  colorVariables.eventBlue = getCssVariable('--color-event-blue');
+  colorVariables.eventRed = getCssVariable('--color-event-red');
+  colorVariables.eventYellow = getCssVariable('--color-event-yellow');
+  colorVariables.eventGreen = getCssVariable('--color-event-green');
+  colorVariables.eventDark = getCssVariable('--color-event-dark');
+  colorVariables.eventOrange = getCssVariable('--color-event-orange');
+  colorVariables.background = getCssVariable('--color-background');
+  colorVariables.darkGrayFilled = getCssVariable('--color-dark-gray-filled');
+}
 
 /*******************************************************************************
  * TIME CALCULATION FUNCTIONS
@@ -164,13 +212,20 @@ function createRectangle(rows, cols) {
 
 // Create a decade block with two rectangles
 function createDecadeBlock(decade) {
-  const decadeContainer = document.createElement('div');
-  decadeContainer.classList.add('decade-container');
+  // Create wrapper to hold both label and container
+  const decadeBlockWrapper = document.createElement('div');
+  decadeBlockWrapper.classList.add('decade-block-wrapper');
   
   // Add label for this decade
   const label = document.createElement('div');
   label.classList.add('decade-label');
   // label.textContent = `Decade ${decade + 1}`;
+  // decadeBlockWrapper.appendChild(label);
+  
+  // Create decade container to hold rectangles
+  const decadeContainer = document.createElement('div');
+  decadeContainer.classList.add('decade-container');
+  decadeBlockWrapper.appendChild(decadeContainer);
   
   // Create two rectangles per decade
   for (let i = 0; i < 2; i++) {
@@ -188,7 +243,7 @@ function createDecadeBlock(decade) {
   ageLabel.textContent = `${(decade + 1) * 10}`;
   decadeContainer.appendChild(ageLabel);
   
-  return { label, container: decadeContainer };
+  return decadeBlockWrapper;
 }
 
 // Set IDs for all week cells
@@ -231,9 +286,8 @@ function populateAlternativeCalendar(numDecades) {
   
   // Add decade blocks
   for (let i = 0; i < numDecades; i++) {
-    const { label, container } = createDecadeBlock(i);
-    root.appendChild(label);
-    root.appendChild(container);
+    const decadeBlock = createDecadeBlock(i);
+    root.appendChild(decadeBlock);
   }
   
   // Set IDs for all week cells
@@ -259,8 +313,8 @@ function fillAlternativeCalendar(birthday) {
     const weekCell = document.getElementById(`week-${week}`);
     if (weekCell) {
       weekCell.classList.add('filled');
-      weekCell.style.backgroundColor = 'var(--color-dark-gray-filled)';
-      weekCell.style.borderColor = 'var(--color-dark-gray-filled)';
+      weekCell.style.backgroundColor = colorVariables.darkGrayFilled;
+      weekCell.style.borderColor = colorVariables.darkGrayFilled;
     }
   }
   
@@ -314,8 +368,8 @@ function applyEventsToAlternativeLayout() {
     
     const weekCell = document.getElementById(`week-${weekIndex}`);
     if (weekCell) {
-      weekCell.style.backgroundColor = 'var(--color-special-event)';
-      weekCell.style.borderColor = 'var(--color-special-event)';
+      weekCell.style.backgroundColor = colorVariables.specialEvent;
+      weekCell.style.borderColor = colorVariables.specialEvent;
       
       weekCell.classList.add('has-tooltip');
       weekCell.dataset.tooltip = userEvent.name;
@@ -355,6 +409,8 @@ function applyEventsToAlternativeLayout() {
 // Apply life periods to alternative layout
 function applyLifePeriodsToAlternativeLayout() {
   const birthDate = new Date(myBirthDay);
+  const birthMonth = birthDate.getMonth();
+  const birthDay = birthDate.getDate();
   
   document.querySelectorAll('.week-cell').forEach(weekCell => {
     if (!weekCell.id.startsWith('week-')) return;
@@ -404,22 +460,30 @@ function applyLifePeriodsToAlternativeLayout() {
       }
     });
     
-    // Apply birthday highlights
+    // Apply birthday highlights - FIXED version
     if (customSettings.birthdays.enabled) {
-      // Get this week's approximate date
-      const weekDate = new Date(birthDate);
-      weekDate.setDate(weekDate.getDate() + (weekIndex * 7));
+      // Calculate what part of the year this week represents
+      const yearFraction = (weekIndex % weeksInYear) / weeksInYear;
       
-      // Check if this week includes birthday
-      if (weekDate.getMonth() === birthDate.getMonth()) {
-        const startDay = weekDate.getDate();
-        const endDay = new Date(weekDate).setDate(startDay + 6);
-        
-        if (birthDate.getDate() >= startDay && birthDate.getDate() <= endDay) {
-          weekCell.classList.add('birthday');
-          weekCell.classList.add('has-tooltip');
-          weekCell.dataset.tooltip = 'Birthday';
-        }
+      // Get the month that corresponds to this fraction of the year
+      // JavaScript months are 0-indexed (0-11)
+      const weekMonth = Math.floor(yearFraction * 12);
+      
+      // Calculate approximate day within the month
+      const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+      const monthStartFraction = weekMonth / 12;
+      const monthEndFraction = (weekMonth + 1) / 12;
+      const monthFractionLength = monthEndFraction - monthStartFraction;
+      const dayFractionWithinMonth = (yearFraction - monthStartFraction) / monthFractionLength;
+      const approximateDayInMonth = Math.floor(dayFractionWithinMonth * daysInMonth[weekMonth]) + 1;
+      
+      // Check if this week might contain the birthday
+      // We check if the month matches and the day is within +/- 3 days for safety
+      if (weekMonth === birthMonth &&
+          Math.abs(approximateDayInMonth - birthDay) <= 3) {
+        weekCell.classList.add('birthday');
+        weekCell.classList.add('has-tooltip');
+        weekCell.dataset.tooltip = 'Birthday';
       }
     }
   });
@@ -466,8 +530,8 @@ function createYearBlock(year, birthday) {
       // Mark as filled if in the past
       if (weekDate <= today) {
         weekDiv.classList.add('filled');
-        weekDiv.style.backgroundColor = 'var(--color-dark-gray-filled)';
-        weekDiv.style.borderColor = 'var(--color-dark-gray-filled)';
+        weekDiv.style.backgroundColor = colorVariables.darkGrayFilled;
+        weekDiv.style.borderColor = colorVariables.darkGrayFilled;
       }
 
       // Mark as invisible if before birth
@@ -576,7 +640,7 @@ function generateRecurringEvents(baseEvent) {
     date: new Date(eventDate),
     name: baseEvent.name,
     description: baseEvent.name,
-    color: 'var(--color-special-event)',
+    color: colorVariables.specialEvent,
     frequency: baseEvent.frequency
   });
   
@@ -619,7 +683,7 @@ function generateRecurringEvents(baseEvent) {
         date: new Date(nextDate.getTime()),
         name: baseEvent.name,
         description: baseEvent.name,
-        color: 'var(--color-special-event)',
+        color: colorVariables.specialEvent,
         frequency: baseEvent.frequency
       });
       
@@ -869,127 +933,127 @@ const predefinedEvents = [
   {
     'date': new Date('2007-07-02'),
     'description': 'Lorem ipsum dolor sit amet.',
-    'color': '#18aedb',
+    'color': null, // Will be set in initialization
   },
   {
     'date': new Date('2007-06-01'),
     'description': 'Consectetur adipiscing elit.',
-    'color': '#f8312f',
+    'color': null, // Will be set in initialization
     'icon': '❤️',
   },
   {
     'date': new Date('2007-06-11'),
     'description': 'Sed do eiusmod tempor.',
-    'color': '#18aedb',
+    'color': null, // Will be set in initialization
   },
   {
     'date': new Date('2007-12-25'),
     'description': 'Incididunt ut labore et dolore.',
-    'color': '#f8f806',
+    'color': null, // Will be set in initialization
   },
   {
     'date': new Date('2008-06-01'),
     'description': 'Magna aliqua ut enim ad.',
-    'color': '#f8f806',
+    'color': null, // Will be set in initialization
   },
   {
     'date': new Date('2009-03-30'),
     'description': 'Minim veniam quis nostrud.',
-    'color': '#3ef806',
+    'color': null, // Will be set in initialization
   },
   {
     'date': new Date('2009-09-07'),
     'description': 'Exercitation ullamco laboris nisi.',
-    'color': '#18aedb',
+    'color': null, // Will be set in initialization
   },
   {
     'date': new Date('2010-03-16'),
     'description': 'Ut aliquip ex ea commodo.',
-    'color': '#222222',
+    'color': null, // Will be set in initialization
   },
   {
     'date': new Date('2010-03-30'),
     'description': 'Duis aute irure dolor in.',
-    'color': '#f8f806',
+    'color': null, // Will be set in initialization
   },
   {
     'date': new Date('2010-12-07'),
     'description': 'Reprehenderit in voluptate velit.',
-    'color': '#18aedb',
+    'color': null, // Will be set in initialization
   },
   {
     'date': new Date('2013-05-02'),
     'description': 'Esse cillum dolore eu fugiat.',
-    'color': '#f8f806',
+    'color': null, // Will be set in initialization
   },
   {
     'date': new Date('2013-08-26'),
     'description': 'Nulla pariatur excepteur sint.',
-    'color': '#3ef806',
+    'color': null, // Will be set in initialization
   },
   {
     'date': new Date('2013-05-22'),
     'description': 'Occaecat cupidatat non proident.',
-    'color': '#18aedb',
+    'color': null, // Will be set in initialization
   },
   {
     'date': new Date('2015-08-01'),
     'description': 'Sunt in culpa qui officia.',
-    'color': '#f8f806',
+    'color': null, // Will be set in initialization
   },
   {
     'date': new Date('2008-03-28'),
     'description': 'Deserunt mollit anim id est.',
-    'color': '#f8312f',
+    'color': null, // Will be set in initialization
     'icon': '❤️',
   },
   {
     'date': new Date('2008-07-02'),
     'description': 'Laborum lorem ipsum dolor.',
-    'color': '#f8312f',
+    'color': null, // Will be set in initialization
     'icon': '❤️',
   },
   {
     'date': new Date('2018-02-07'),
     'description': 'Sit amet consectetur elit.',
-    'color': '#f8312f',
+    'color': null, // Will be set in initialization
     'icon': '❤️',
   },
   {
     'date': new Date('2019-01-15'),
     'description': 'Adipiscing elit sed do.',
-    'color': '#222222',
+    'color': null, // Will be set in initialization
     'icon': '💀',
   },
   {
     'date': new Date('2020-08-09'),
     'description': 'Eiusmod tempor incididunt ut.',
-    'color': '#f88b06',
+    'color': null, // Will be set in initialization
   },
   {
     'date': new Date('2020-09-10'),
     'description': 'Labore et dolore magna.',
-    'color': '#f88b06',
+    'color': null, // Will be set in initialization
   },
   {
     'date': new Date('2022-07-21'),
     'description': 'Aliqua ut enim ad minim.',
-    'color': '#f88b06',
+    'color': null, // Will be set in initialization
   },
   {
     'date': new Date('2022-08-01'),
     'description': 'Veniam quis nostrud exercitation.',
-    'color': '#f8f806',
+    'color': null, // Will be set in initialization
   },
   {
     'date': new Date('2023-05-22'),
     'description': 'Ullamco laboris nisi ut.',
-    'color': '#18aedb',
+    'color': null, // Will be set in initialization
   },
   {
     'date': new Date('2025-05-21'),
     'description': 'Fin Cerisier',
-    'color': '#18aedb',
+    'color': '#34a853', // Will be set in initialization
     'icon': '🍒',
   },
 ];
@@ -1000,6 +1064,19 @@ const predefinedEvents = [
  ******************************************************************************/
 // Initialize application - main startup function
 function initializeApp() {
+  // Load color variables from CSS
+  loadColorVariables();
+  
+  // Initialize predefined events with color variables
+  predefinedEvents.forEach(event => {
+    if (!event.color) {
+      // Rotate through different colors if not explicitly set
+      const colorKeys = ['eventBlue', 'eventRed', 'eventYellow', 'eventGreen', 'eventDark', 'eventOrange'];
+      const randomColorKey = colorKeys[Math.floor(Math.random() * colorKeys.length)];
+      event.color = colorVariables[randomColorKey];
+    }
+  });
+  
   // Generate stats
   initializeStats();
   
@@ -1036,6 +1113,9 @@ function initializeApp() {
  ******************************************************************************/
 // Set up event handlers once the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', function() {
+  // Load CSS variables first thing
+  loadColorVariables();
+  
   // Toggle options panel visibility
   const toggleBtn = document.getElementById('toggle-options');
   const optionsContainer = document.querySelector('.options-container');
