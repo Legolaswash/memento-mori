@@ -84,6 +84,37 @@
   --shadow-md: 0 2px 10px var(--color-card-shadow);
 }
 
+/* Light theme colors - Applied with prefers-color-scheme media query */
+@media (prefers-color-scheme: light) {
+  :root {
+    /* Colors - Light theme */
+    --color-background: #ffffff;
+    --color-dark-gray: #555555;
+    --color-dark-gray-filled: #555555;
+    --color-black: #000000;
+    --color-white: #ffffff;
+    --color-text: #333333;
+    
+    /* UI Element Colors - Light theme */
+    --color-option-bg: #f5f5f5;
+    --color-input-bg: #ffffff;
+    --color-input-border: #cccccc;
+    --color-container-bg: #f8f8f8;
+    --color-button-bg: #e0e0e0;
+    --color-button-text: #333333;
+    --color-accent: #0366d6;
+    --color-card-shadow: rgba(0, 0, 0, 0.1);
+    --color-hover-bg: #eeeeee;
+    --color-border-light: #dddddd;
+    
+    /* Period colors remain the same for consistency */
+    
+    /* Box shadows - Light theme */
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 2px 10px rgba(0, 0, 0, 0.12);
+  }
+}
+
 /*******************************************************************************
  * BASIC STYLES
  ******************************************************************************/

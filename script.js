@@ -80,6 +80,59 @@ function loadColorVariables() {
   colorVariables.darkGrayFilled = getCssVariable('--color-dark-gray-filled');
 }
 
+// Detect system color scheme preference
+function detectColorScheme() {
+  // Check if the user prefers dark mode
+  const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+  
+  // Set the theme attribute on html element
+  document.documentElement.setAttribute('data-theme', prefersDarkScheme.matches ? 'dark' : 'light');
+  
+  // Set up a listener for changes to the preference
+  prefersDarkScheme.addEventListener('change', (e) => {
+    document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+    
+    // Reload color variables since they've changed
+    loadColorVariables();
+    
+    // Regenerate calendar with new colors
+    regenerateCalendar();
+  });
+}
+
+// Regenerate calendar with current settings (used when theme changes)
+function regenerateCalendar() {
+  // Clear any previous layout class
+  const calendarElement = document.getElementById('calendar');
+  calendarElement.classList.remove('alternative-layout');
+  
+  // Update stats
+  document.getElementById('stats').innerHTML = '';
+  initializeStats();
+  
+  // Regenerate calendar
+  if (useAlternativeLayout) {
+    const numDecades = Math.ceil(myLifeExpectancy / 10);
+    populateAlternativeCalendar(numDecades);
+    const weeksLived = fillAlternativeCalendar(myBirthDay);
+    applyEventsToAlternativeLayout();
+    applyLifePeriodsToAlternativeLayout();
+  } else {
+    populateCalendar(new Date(myBirthDay), myLifeExpectancy);
+    renderAllCalendarEvents();
+    
+    const birthDateForPeriods = new Date(myBirthDay);
+    document.querySelectorAll('.week-cell').forEach(weekCell => {
+      if (!weekCell.classList.contains('invisible')) {
+        applyLifePeriods(weekCell, birthDateForPeriods);
+      }
+    });
+  }
+  
+  // Update legend
+  updateLegend();
+}
+
 /*******************************************************************************
  * TIME CALCULATION FUNCTIONS
  * Core functions to calculate remaining lifetime in different units
@@ -1113,6 +1166,9 @@ function initializeApp() {
  ******************************************************************************/
 // Set up event handlers once the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', function() {
+  // Detect and apply system color scheme
+  detectColorScheme();
+  
   // Load CSS variables first thing
   loadColorVariables();
   
@@ -1136,8 +1192,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   
-  // Force dark theme
-  document.documentElement.setAttribute('data-theme', 'dark');
+  // Remove this line since we're now using system preferences:
+  // document.documentElement.setAttribute('data-theme', 'dark');
   
   // Set default values in form fields
   if (document.getElementById('custom-birthdate')) {
